@@ -1,0 +1,12 @@
+[package]
+name = "ditherify"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+#libc = { version = "0.2.68", default-features = false }
+# libc = "0.2.68"
+wee_alloc = "0.4.5"

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Dithering Example</title>
+    <link rel="stylesheet" href="css/tailwind.min.css" />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <main class="flex flex-col items-center mt-20 mb-20">
+      <div id="grid" class="grid grid-cols-2 gap-4">
+        <!-- <img
+          id="cat-image"
+          class="mb-4"
+          src="img/russian-blue-sunglasses.jpg"
+          alt="Russian blue cat wearing yellow sunglasses"
+        /> -->
+        <video id="cat-video" autoplay muted></video>
+        <canvas id="cat-canvas"></canvas>
+      </div>
+      <!-- <p class="text-pink-600 text-xs">
+        Photo by <a href="https://unsplash.com/@raouldroog">Raoul Droog</a> on
+        <a href="https://unsplash.com/">Unsplash</a>
+      </p> -->
+    </main>
+    <script src="js/simple_dithering.js"></script>
+  </body>
+</html>
