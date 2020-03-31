@@ -13,9 +13,7 @@ const gCanvas = document.getElementById("cat-canvas");
 const gCtx = gCanvas.getContext("2d");
 let gWidth, gHeight, gStride, gSizeInBytes;
 let gPlaying = false;
-
-// let gSourceEl = document.getElementById("cat-image");
-let gSourceEl = document.getElementById("cat-video");
+let gSourceEl;
 
 const OFFSETS = [
   [1, 0],
@@ -82,6 +80,7 @@ function jsDither() {
 
 async function videoInit() {
   const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+  gSourceEl = document.getElementById("cat-video");
   gSourceEl.srcObject = stream;
   return new Promise(resolve => {
     gSourceEl.addEventListener("play", () => {
@@ -89,6 +88,10 @@ async function videoInit() {
       resolve();
     });
   });
+}
+
+function imageInit() {
+  gSourceEl = document.getElementById("cat-image");
 }
 
 function animate() {
@@ -100,6 +103,7 @@ function animate() {
 
 async function main() {
   await videoInit();
+  // imageInit();
   commonInit();
   animate();
 }
