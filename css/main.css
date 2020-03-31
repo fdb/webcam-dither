@@ -4,3 +4,8 @@ body {
   background: no-repeat
     linear-gradient(180deg, #fed7e2 0%, #fff5f7 20%, #fff5f7 100%);
 }
+
+canvas {
+  max-width: 100%;
+  height: auto;
+}
