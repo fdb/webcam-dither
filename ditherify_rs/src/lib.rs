@@ -1,24 +1,5 @@
-// #![no_std]
-// use core::panic::PanicInfo;
-// use core::slice;
-// use std::mem;
-// extern crate alloc;
-// use alloc::boxed::Box;
-
-extern crate wee_alloc;
-
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
-// #[panic_handler]
-// fn panic(_info: &PanicInfo) -> ! {
-//   loop {}
-// }
-
-// #[alloc_error_handler]
-// fn alloc_error(_info: core::alloc::Layout) -> ! {
-//   loop {}
-// }
 
 fn brightness(r: u8, g: u8, b: u8) -> u8 {
   let cmax = if r > g { r } else { g };
@@ -42,48 +23,60 @@ pub struct Image {
   bytes: Vec<u8>,
   width: i32,
   height: i32,
+  error_factor: f32,
+}
+
+fn image_deref<'a>(image_ptr: *mut Image) -> &'a mut Image {
+  unsafe { &mut *image_ptr }
 }
 
 #[no_mangle]
-pub extern "C" fn init(width: i32, height: i32) -> *mut Image {
-  // let mut bytes = Vec::new();
-  let mut bytes = Vec::with_capacity((width * height * 4) as usize);
-  // bytes.resize((width * height * 4) as usize, 42);
-  for byte in &mut bytes {
-    *byte = 42;
-  }
+pub extern "C" fn image_new(width: i32, height: i32) -> *mut Image {
+  let mut bytes = Vec::new();
+  bytes.resize((width * height * 4) as usize, 255);
   let image = Image {
     bytes,
     width,
     height,
+    error_factor: 0.125,
   };
   Box::into_raw(Box::new(image))
 }
 
 #[no_mangle]
+pub extern "C" fn image_free(image_ptr: *mut Image) {
+  unsafe {
+    drop(Box::from_raw(image_ptr));
+  };
+}
+
+#[no_mangle]
 pub extern "C" fn image_height(image_ptr: *mut Image) -> i32 {
-  let image: &mut Image = unsafe { &mut Box::from_raw(image_ptr) };
+  let image = image_deref(image_ptr);
   image.height
 }
 
 #[no_mangle]
 pub extern "C" fn image_width(image_ptr: *mut Image) -> i32 {
-  let image: &mut Image = unsafe { &mut Box::from_raw(image_ptr) };
+  let image = image_deref(image_ptr);
   image.width
 }
 
 #[no_mangle]
+pub extern "C" fn image_set_error_factor(image_ptr: *mut Image, error_factor: f32) {
+  let image = image_deref(image_ptr);
+  image.error_factor = error_factor;
+}
+
+#[no_mangle]
 pub extern "C" fn image_bytes(image_ptr: *mut Image) -> *mut u8 {
-  let image: &mut Image = unsafe { &mut Box::from_raw(image_ptr) };
-  // image.bytes.as_mut_slice()
+  let image = image_deref(image_ptr);
   image.bytes.as_mut_ptr()
 }
 
 #[no_mangle]
-pub extern "C" fn dither(image_ptr: *mut Image) {
-  let image: &mut Image = unsafe { &mut Box::from_raw(image_ptr) };
-  // let bytes: &mut [u8] = unsafe { slice::from_raw_parts_mut(bytes_ptr, len) };
-  // let len: usize = (width * height * 4) as usize;
+pub extern "C" fn image_dither(image_ptr: *mut Image) {
+  let image = image_deref(image_ptr);
   let width = image.width;
   let height = image.height;
   let stride = width * 4;
@@ -115,7 +108,7 @@ pub extern "C" fn dither(image_ptr: *mut Image) {
           let g2 = image.bytes[pos2 + 1];
           let b2 = image.bytes[pos2 + 2];
           let mut bright2 = brightness(r2, g2, b2) as f32;
-          bright2 += err * 0.125;
+          bright2 += err * image.error_factor;
           // let gray = bright2 as u8;
           let gray = clamp_255(bright2);
           image.bytes[pos2 + 0] = gray;
@@ -124,5 +117,28 @@ pub extern "C" fn dither(image_ptr: *mut Image) {
         }
       }
     }
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_image_new() {
+    let image = image_new(800, 600);
+    assert_eq!(image_width(image), 800);
+    assert_eq!(image_height(image), 600);
+    assert_eq!(2 + 2, 4);
+    image_free(image);
+  }
+
+  #[test]
+  fn test_image_bytes() {
+    let image = image_new(800, 600);
+    let bytes_ptr = image_bytes(image);
+    let bytes = unsafe { std::slice::from_raw_parts(bytes_ptr, 800 * 600 * 4) };
+    assert_eq!(bytes[0], 255);
+    image_free(image);
   }
 }

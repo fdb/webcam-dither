@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Dithering Example</title>
+    <link rel="stylesheet" href="css/tailwind.min.css" />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <main class="flex flex-col items-center mt-20 mb-20">
+      <div id="grid" class="grid grid-cols-2 gap-4">
+        <!-- <img
+          id="cat-image"
+          class="mb-4"
+          src="img/russian-blue-sunglasses.jpg"
+          alt="Russian blue cat wearing yellow sunglasses"
+        /> -->
+        <video id="cat-video" autoplay muted></video>
+        <canvas id="cat-canvas"></canvas>
+      </div>
+      <!-- <p class="text-pink-600 text-xs">
+        Photo by <a href="https://unsplash.com/@raouldroog">Raoul Droog</a> on
+        <a href="https://unsplash.com/">Unsplash</a>
+      </p> -->
+    </main>
+    <div class="flex items-center justify-center text-xs">
+      <label class="flex items-center">
+        <span class="mr-5">Error Factor</span>
+        <input
+          type="range"
+          min="0"
+          max="5"
+          step="0.001"
+          value="0.125"
+          id="range-error-factor"
+          style="width: 600px"
+        />
+      </label>
+    </div>
+    <script src="js/rust_dithering.js"></script>
+  </body>
+</html>

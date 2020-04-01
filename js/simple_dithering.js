@@ -1,3 +1,9 @@
+const gCanvas = document.getElementById("cat-canvas");
+const gCtx = gCanvas.getContext("2d");
+let gWidth, gHeight, gStride, gSizeInBytes;
+let gPlaying = false;
+let gSourceEl;
+
 // From https://github.com/processing/processing/blob/master/core/src/processing/core/PGraphics.java
 function brightness(r, g, b) {
   let cmax = r > g ? r : g;
@@ -8,12 +14,6 @@ function brightness(r, g, b) {
 function clamp(v, min, max) {
   return v < min ? min : v > max ? max : v;
 }
-
-const gCanvas = document.getElementById("cat-canvas");
-const gCtx = gCanvas.getContext("2d");
-let gWidth, gHeight, gStride, gSizeInBytes;
-let gPlaying = false;
-let gSourceEl;
 
 const OFFSETS = [
   [1, 0],

@@ -1,43 +1,23 @@
-//   // From https://github.com/openjdk/jdk/blob/master/src/java.desktop/share/classes/java/awt/Color.java
-//   function rgb2hsb(r, g, b) {
-//   let cmax = (r > g) ? r : g;
-//   if (b > cmax) cmax = b;
-//   let cmin = r < g ? r : g;
-//   if (b < cmin) cmin = b;
-//   const brightness = cmax / 255;
-//   if (cmax !== 0) {
-//     saturation = (cmax - cmin) / cmax
-//   } else {
-//     saturation = 0;
-//   }
-//   if (saturation = 0)
-
-// }
-
-// From https://github.com/processing/processing/blob/master/core/src/processing/core/PGraphics.java
-function brightness(r, g, b) {
-  let cmax = r > g ? r : g;
-  if (b > cmax) cmax = b;
-  return cmax;
-
-  // return r;
-}
-
-function clamp(v, min, max) {
-  return v < min ? min : v > max ? max : v;
-}
-
 const MODE_JS = "js";
 const MODE_WASM = "wasm";
 
 const gCanvas = document.getElementById("cat-canvas");
 const gCtx = gCanvas.getContext("2d");
-let gWasmImage, _wasmDither;
 let gWidth, gHeight, gStride, gSizeInBytes;
-let gMode = MODE_JS;
+let gExports, gMemoryBuffer, gImagePtr;
 let gPlaying = false;
-// let gSourceEl = document.getElementById("cat-image");
-let gSourceEl = document.getElementById("cat-video");
+let gMode = MODE_WASM;
+let gSourceEl;
+
+function brightness(r, g, b) {
+  let cmax = r > g ? r : g;
+  if (b > cmax) cmax = b;
+  return cmax;
+}
+
+function clamp(v, min, max) {
+  return v < min ? min : v > max ? max : v;
+}
 
 const OFFSETS = [
   [1, 0],
@@ -100,55 +80,45 @@ function jsDither() {
     }
   }
   gCtx.putImageData(imageData, 0, 0);
-  // requestAnimationFrame(() => dither(video));
 }
-
-// let video = document.querySelector("#cat-video");
 
 async function videoInit() {
   const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+  gSourceEl = document.getElementById("cat-video");
   gSourceEl.srcObject = stream;
-  gSourceEl.addEventListener("play", () => {
-    commonInit();
-    gPlaying = true;
-    // requestAnimationFrame(animate);
+  return new Promise(resolve => {
+    gSourceEl.addEventListener("play", () => {
+      gPlaying = true;
+      resolve();
+    });
   });
 }
 
-// run();
+function imageInit() {
+  gSourceEl = document.getElementById("cat-image");
+}
 
-const MEMORY_PAGE_SIZE = 2 ** 16;
 const WASM_URI =
-  "ditherify/target/wasm32-unknown-unknown/release/ditherify.wasm";
+  "ditherify_rs/target/wasm32-unknown-unknown/release/ditherify.wasm";
 
 async function wasmInit() {
-  const results = await WebAssembly.instantiateStreaming(fetch(WASM_URI));
-  const { instance } = results;
-  _wasmDither = instance.exports.dither;
-  // gBytes = gBytes.subarray(0, gSizeInBytes);
-  gWasmImage = instance.exports.init(gWidth, gHeight);
-  const wasmWidth = instance.exports.image_width(gWasmImage);
-  const wasmHeight = instance.exports.image_height(gWasmImage);
-  console.log(wasmWidth, wasmHeight);
-  let gPtr = instance.exports.image_bytes(gWasmImage);
-  console.log("IMAGE", gWasmImage, "POINTER", gPtr, "DELTA", gPtr - gWasmImage);
-  gBytes = new Uint8ClampedArray(
-    instance.exports.memory.buffer,
-    gPtr,
-    gSizeInBytes
-  );
-  console.log(gBytes);
-  //gBytes = gBytes.subarray(gPtr, gSizeInBytes);
-  //console.log(gPtr);
+  const bytes = await (await fetch(WASM_URI)).arrayBuffer();
+  const result = await WebAssembly.instantiate(bytes);
+  const { exports } = result.instance;
+  gExports = exports;
+  const { memory } = exports;
+  gImagePtr = exports.image_new(gWidth, gHeight);
+  const bytesPtr = gExports.image_bytes(gImagePtr);
+  gMemoryBuffer = new Uint8ClampedArray(memory.buffer, bytesPtr, gSizeInBytes);
 }
 
 function wasmDither() {
   gCtx.drawImage(gSourceEl, 0, 0);
   const imageData = gCtx.getImageData(0, 0, gWidth, gHeight);
   const { data } = imageData;
-  gBytes.set(data);
-  _wasmDither(gWasmImage);
-  data.set(gBytes);
+  gMemoryBuffer.set(data);
+  gExports.image_dither(gImagePtr, gWidth, gHeight);
+  data.set(gMemoryBuffer);
   gCtx.putImageData(imageData, 0, 0);
 }
 
@@ -169,19 +139,16 @@ function onSwitchMode(e) {
 }
 
 async function main() {
-  document
-    .querySelectorAll('input[type="radio"]')
-    .forEach(el => addEventListener("change", onSwitchMode));
-
-  // commonInit();
   await videoInit();
-  // setTimeout(async () => {
-  // await wasmInit();
+  // imageInit();
+  commonInit();
+  await wasmInit();
   animate();
-  // }, 10);
 }
 
 main();
 
-// main(document.querySelector("#cat-image"));
-// dither(document.querySelector("#cat-image"));
+document.querySelector("#range-error-factor").addEventListener("input", e => {
+  const value = parseFloat(e.target.value);
+  gExports.image_set_error_factor(gImagePtr, value);
+});
