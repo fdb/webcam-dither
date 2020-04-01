@@ -28,9 +28,8 @@ function commonInit() {
 }
 
 async function wasmInit() {
-  const result = await WebAssembly.instantiateStreaming(
-    fetch("ditherify/ditherify.wasm")
-  );
+  const bytes = await (await fetch("ditherify/ditherify.wasm")).arrayBuffer();
+  const result = await WebAssembly.instantiate(bytes);
 
   console.log(result);
   console.log(result.instance.exports.add(1));
