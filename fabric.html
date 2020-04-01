@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Dithering Example</title>
+    <link rel="stylesheet" href="css/tailwind.min.css" />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <main class="flex flex-col items-center mt-20 mb-20">
+      <div id="grid" class="grid grid-cols-2 gap-4">
+        <canvas
+          class="border"
+          id="fabric-canvas"
+          width="400"
+          height="500"
+        ></canvas>
+
+        <canvas class="border" id="dither-canvas"></canvas>
+      </div>
+    </main>
+    <script src="js/fabric.min.js"></script>
+    <script src="js/fabric_dithering.js"></script>
+  </body>
+</html>
